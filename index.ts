@@ -49,6 +49,7 @@ export default class UniversalSearchPlugin extends AdminForthPlugin {
         debounceMs: this.options.debounceMs ?? 500,
       }
     };
+
     const listInjections: any = this.resourceConfig.options.pageInjections.list as any;
     const current = listInjections.beforeActionButtons;
     if (!current) listInjections.beforeActionButtons = [injection];
