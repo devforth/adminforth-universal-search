@@ -48,7 +48,7 @@ function buildFilters(term: string) {
         }
       } else {
         operator = col.caseSensitive ? 'like' : 'ilike';
-        value = `%${term}%`;
+        value = `${term}`;
       }
       result.push({ field, operator, value });
     };
