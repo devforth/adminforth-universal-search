@@ -1,0 +1,22 @@
+{
+  "name": "@adminforth/universal-search",
+  "version": "0.0.1",
+  "description": "Universal quick filters input plugin for AdminForth (injected before action buttons)",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc && rsync -av --exclude 'node_modules' custom dist/"
+  },
+  "keywords": [
+    "adminforth",
+    "filters",
+    "search"
+  ],
+  "author": "devforth",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^22.18.6",
+    "typescript": "^5.9.2"
+  }
+}
