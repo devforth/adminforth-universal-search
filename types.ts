@@ -10,4 +10,5 @@ export interface UniversalSearchColumnConfig {
 export interface PluginOptions {
   columns?: UniversalSearchColumnConfig[];
   debounceMs?: number;
+  placeholder?: string;
 }
