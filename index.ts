@@ -99,6 +99,7 @@ export default class UniversalSearchPlugin extends AdminForthPlugin {
             else if (searchBy === 'both') { addFilter(col.name); addFilter(`${col.name}__key`); }
           });
           if (!sub.length) return [];
+          console.log('UniversalSearchPlugin: transformed filter', f, '=>', sub);
           return [Filters.OR(sub)];
         }
         return [f];
