@@ -1,4 +1,4 @@
-import { AdminForthPlugin, AdminForthResource, IAdminForth, AdminForthDataTypes } from 'adminforth';
+import { AdminForthPlugin, AdminForthResource, IAdminForth, AdminForthDataTypes, Filters } from 'adminforth';
 import { PluginOptions, UniversalSearchColumnConfig } from './types.js';
 
 export default class UniversalSearchPlugin extends AdminForthPlugin {
@@ -75,33 +75,31 @@ export default class UniversalSearchPlugin extends AdminForthPlugin {
         }
         if (f.field === virtualFieldName) {
           const term = (f.value || '').toString().trim();
-            if (!term) return [];
-            const sub: any[] = [];
-            columns.forEach(col => {
-              const searchBy = (col.searchBy === 'labelOnly' ? 'keyOnly' : col.searchBy) || 'valueOnly';
-              const addFilter = (field: string) => {
-                let operator: string;
-                let value: string;
-                if (col.exact) {
-                  if (col.caseSensitive) {
-                    operator = 'like';
-                    value = term;
-                  } else {
-                    operator = 'eq';
-                    value = term;
-                  }
+          if (!term) return [];
+          const sub: any[] = [];
+          columns.forEach(col => {
+            const searchBy = (col.searchBy === 'labelOnly' ? 'keyOnly' : col.searchBy) || 'valueOnly';
+            const addFilter = (field: string) => {
+              if (col.exact) {
+                if (col.caseSensitive) {
+                  sub.push(Filters.LIKE(field, term));
                 } else {
-                  operator = col.caseSensitive ? 'like' : 'ilike';
-                  value = `${term}`;
+                  sub.push(Filters.EQ(field, term));
                 }
-                sub.push({ field, operator, value });
-              };
-              if (searchBy === 'valueOnly') addFilter(col.name);
-              else if (searchBy === 'keyOnly') addFilter(`${col.name}__key`);
-              else if (searchBy === 'both') { addFilter(col.name); addFilter(`${col.name}__key`); }
-            });
-            if (!sub.length) return [];
-            return [{ operator: 'or', subFilters: sub }];
+              } else {
+                if (col.caseSensitive) {
+                  sub.push(Filters.LIKE(field, term));
+                } else {
+                  sub.push((Filters as any).ILIKE ? (Filters as any).ILIKE(field, term) : { field, operator: 'ilike', value: term });
+                }
+              }
+            };
+            if (searchBy === 'valueOnly') addFilter(col.name);
+            else if (searchBy === 'keyOnly') addFilter(`${col.name}__key`);
+            else if (searchBy === 'both') { addFilter(col.name); addFilter(`${col.name}__key`); }
+          });
+          if (!sub.length) return [];
+          return [Filters.OR(sub)];
         }
         return [f];
       });
