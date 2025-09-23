@@ -40,6 +40,15 @@ export default class UniversalSearchPlugin extends AdminForthPlugin {
 
     if (!Array.isArray(this.resourceConfig.columns)) this.resourceConfig.columns = [] as any;
     const exists = (this.resourceConfig.columns as any[]).some(c => c.name === virtualFieldName);
+    if (!exists) {
+      (this.resourceConfig.columns as any[]).push({
+        name: virtualFieldName,
+        virtual: true,
+        type: AdminForthDataTypes.STRING,
+        label: 'Universal Search',
+        showIn: { all: false },
+      });
+    }
 
     const injection = {
       file: this.componentPath('UniversalSearchInput.vue'),
@@ -108,16 +117,32 @@ export default class UniversalSearchPlugin extends AdminForthPlugin {
 
     const transformer = async (ctx: any) => {
       const { query } = ctx;
+
+      let incomingTerm = (query?.body?.__universal_search_term ?? query?.__universal_search_term ?? '').toString().trim();
+      if (!incomingTerm && Array.isArray(query?.filters)) {
+        const vf = (query.filters as any[]).find(f => f?.field === virtualFieldName && typeof f.value === 'string');
+        if (vf) incomingTerm = vf.value.trim();
+      }
+
       if (ephemeral) {
-        const term = (query?.body?.__universal_search_term || query?.__universal_search_term || '').toString().trim();
-        if (term) {
-          const tempFilter = { field: virtualFieldName, operator: 'eq', value: term };
-          query.filters = Array.isArray(query.filters) ? [...query.filters, tempFilter] : [tempFilter];
+        if (incomingTerm) {
+          query.__universal_search_term = incomingTerm;
+            const alreadyHas = Array.isArray(query.filters) && (query.filters as any[]).some(f => f?.field === virtualFieldName);
+            if (!alreadyHas) {
+              const tempFilter = { field: virtualFieldName, operator: 'eq', value: incomingTerm };
+              query.filters = Array.isArray(query.filters) ? [...query.filters, tempFilter] : [tempFilter];
+            }
+        } else {
+          if (Array.isArray(query.filters)) {
+            query.filters = (query.filters as any[]).filter(f => f?.field !== virtualFieldName);
+          }
         }
       }
+
       if (Array.isArray(query?.filters)) {
         query.filters = transformFilters(query.filters);
       }
+
       return { ok: true, error: '' };
     };
 
