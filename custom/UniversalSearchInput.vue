@@ -21,34 +21,37 @@
 </template>
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-const adminforth: any = (window as any).adminforth || {};
+import adminforth from '@/adminforth';
+import { AdminForthFilterOperators } from '@/types/Common';
 
 const props = defineProps<{ meta?: any; resource?: any; adminUser?: any }>();
 const localValue = ref('');
-let debounceTimer: any = null;
+let t: any = null;
 
-function applyInternal() {
+function send(term?: string) {
+  adminforth?.list?.updateFilter?.({
+    field: '_universal_search',
+    operator: AdminForthFilterOperators.EQ,
+    value: term || '',
+  });
+  adminforth?.list?.refresh?.();
+}
+
+function apply() {
   const term = localValue.value.trim();
-  adminforth.__universalSearchTerm = term || undefined;
-  adminforth.list.refresh && adminforth.list.refresh();
+  send(term || '');
 }
 
 function applyImmediate() {
-  if (debounceTimer) {
-    clearTimeout(debounceTimer);
-    debounceTimer = null;
-  }
-  applyInternal();
+  if (t) clearTimeout(t);
+  t = null;
+  apply();
 }
 
 watch(localValue, () => {
   const delay = props.meta?.debounceMs ?? 500;
-  if (debounceTimer) {
-    clearTimeout(debounceTimer);
-  }
-  debounceTimer = setTimeout(() => {
-    applyInternal();
-  }, delay);
+  if (t) clearTimeout(t);
+  t = setTimeout(apply, delay);
 });
 
 function clear() {

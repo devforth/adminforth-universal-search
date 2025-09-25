@@ -76,75 +76,74 @@ export default class UniversalSearchPlugin extends AdminForthPlugin {
     if (!this.resourceConfig.hooks.list) this.resourceConfig.hooks.list = {} as any;
     const originalBefore = this.resourceConfig.hooks.list.beforeDatasourceRequest;
 
-    const transformFilters = (filters: any[]): any[] => {
-      return filters.flatMap(f => {
-        if (!f) return [];
-        if (f.operator === 'or' || f.operator === 'and') {
-          return [{ ...f, subFilters: transformFilters(f.subFilters || []) }];
-        }
-        if (f.field === virtualFieldName) {
-          const term = (f.value || '').toString().trim();
-          if (!term) return [];
-          const sub: any[] = [];
-          columns.forEach(col => {
-            const searchBy = (col.searchBy === 'labelOnly' ? 'keyOnly' : col.searchBy) || 'valueOnly';
-            const addFilter = (field: string) => {
-              if (col.exact) {
-                if (col.caseSensitive) {
-                  sub.push(Filters.LIKE(field, term));
-                } else {
-                  sub.push(Filters.EQ(field, term));
-                }
-              } else {
-                if (col.caseSensitive) {
-                  sub.push(Filters.LIKE(field, term));
-                } else {
-                  sub.push((Filters as any).ILIKE ? (Filters as any).ILIKE(field, term) : { field, operator: 'ilike', value: term });
-                }
-              }
-            };
-            if (searchBy === 'valueOnly') addFilter(col.name);
-            else if (searchBy === 'keyOnly') addFilter(`${col.name}__key`);
-            else if (searchBy === 'both') { addFilter(col.name); addFilter(`${col.name}__key`); }
-          });
-          if (!sub.length) return [];
-          console.log('UniversalSearchPlugin: transformed filter', f, '=>', sub);
-          return [Filters.OR(sub)];
-        }
-        return [f];
-      });
-    };
+const VIRTUAL_FIELD = '_universal_search';
 
-    const transformer = async (ctx: any) => {
-      const { query } = ctx;
+const transformFilters = (filters: any[]): any[] => {
+  return (filters ?? []).flatMap(f => {
+    if (!f) return [];
+    const op = String(f.operator ?? '').toLowerCase();
+    if (op === 'or' || op === 'and') {
+      return [{ ...f, subFilters: transformFilters(f.subFilters || []) }];
+    }
+    if (f.field === VIRTUAL_FIELD) {
+      const term = String(f.value ?? '').trim();
+      if (!term) return [];
+      const sub: any[] = [];
 
-      let incomingTerm = (query?.body?.__universal_search_term ?? query?.__universal_search_term ?? '').toString().trim();
-      if (!incomingTerm && Array.isArray(query?.filters)) {
-        const vf = (query.filters as any[]).find(f => f?.field === virtualFieldName && typeof f.value === 'string');
-        if (vf) incomingTerm = vf.value.trim();
-      }
-
-      if (ephemeral) {
-        if (incomingTerm) {
-          query.__universal_search_term = incomingTerm;
-            const alreadyHas = Array.isArray(query.filters) && (query.filters as any[]).some(f => f?.field === virtualFieldName);
-            if (!alreadyHas) {
-              const tempFilter = { field: virtualFieldName, operator: 'eq', value: incomingTerm };
-              query.filters = Array.isArray(query.filters) ? [...query.filters, tempFilter] : [tempFilter];
-            }
-        } else {
-          if (Array.isArray(query.filters)) {
-            query.filters = (query.filters as any[]).filter(f => f?.field !== virtualFieldName);
+      for (const col of columns) {
+        const searchBy = (col.searchBy === 'labelOnly' ? 'keyOnly' : col.searchBy) || 'valueOnly';
+        const add = (field: string) => {
+          if (col.exact) {
+            if (col.caseSensitive) sub.push(Filters.LIKE(field, term));      
+            else sub.push(Filters.EQ(field, term)); 
+          } else {
+            const likeVal = `${term}`;
+            if (col.caseSensitive) sub.push(Filters.LIKE(field, likeVal));
+            else if ((Filters as any).ILIKE) sub.push((Filters as any).ILIKE(field, likeVal));
+            else sub.push(Filters.LIKE(field, likeVal));
           }
-        }
+        };
+        if (searchBy === 'valueOnly') add(col.name);
+        else if (searchBy === 'keyOnly') add(`${col.name}__key`);
+        else { add(col.name); add(`${col.name}__key`); }
       }
 
-      if (Array.isArray(query?.filters)) {
-        query.filters = transformFilters(query.filters);
-      }
+      if (!sub.length) return [];
+      return [Filters.OR(...sub)];
+    }
+    return [f];
+  });
+};
 
-      return { ok: true, error: '' };
-    };
+const transformer = async ({ query }: { query: any }) => {
+  const term = String(
+    (query?.body?.__universal_search_term ??
+     query?.__universal_search_term ??
+     (global as any).__universal_search_term ??
+     '')
+  ).trim();
+
+  const incoming = Array.isArray(query?.filters)
+    ? query.filters
+    : Array.isArray(query?.body?.filters)
+      ? query.body.filters
+      : [];
+
+  const withVirtual = term
+    ? [...incoming, { field: VIRTUAL_FIELD, operator: 'eq', value: term }]
+    : incoming;
+
+  const transformed = transformFilters(withVirtual);
+
+  query.filters = transformed;
+  query.body = { ...(query.body || {}), filters: transformed };
+
+  if (query.body.__universal_search_term !== undefined) {
+    delete query.body.__universal_search_term;
+  }
+
+  return { ok: true, error: '' };
+};
 
     if (!originalBefore) {
       this.resourceConfig.hooks.list.beforeDatasourceRequest = [transformer];
