@@ -5,7 +5,8 @@
       v-model="localValue"
       type="text"
       :placeholder="props.meta?.placeholder ?? ''"
-      class="border rounded px-2 py-1 text-sm w-64 dark:bg-gray-800 dark:border-gray-600"
+      class="border rounded px-2 py-1 text-sm dark:bg-gray-800 dark:border-gray-600"
+      :class="localValue ? 'w-[222px]' : 'w-64'"
       @keyup.enter="applyImmediate"
     />
     <button
@@ -23,10 +24,21 @@
 import { ref, watch } from 'vue';
 import adminforth from '@/adminforth';
 import { AdminForthFilterOperators } from '@/types/Common';
+import { useFiltersStore } from '@/stores/filters';
+
+const filtersStore = useFiltersStore();
 
 const props = defineProps<{ meta?: any; resource?: any; adminUser?: any }>();
 const localValue = ref('');
 let t: any = null;
+const oldFiltersValue = ref();
+
+watch(() => filtersStore.filters, (newFilters) => {
+  oldFiltersValue.value = newFilters;
+  if (!newFilters || newFilters.length === 0) {
+    apply();
+  }
+});
 
 function send(term?: string) {
   adminforth?.list?.updateFilter?.({
