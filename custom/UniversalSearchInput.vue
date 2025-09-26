@@ -55,7 +55,6 @@ function send(term?: string) {
     operator: AdminForthFilterOperators.EQ,
     value: term || '',
   });
-  adminforth?.list?.refresh?.();
 }
 
 function apply() {
