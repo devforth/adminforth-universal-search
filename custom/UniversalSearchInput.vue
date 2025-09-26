@@ -5,7 +5,8 @@
       v-model="localValue"
       type="text"
       :placeholder="props.meta?.placeholder ?? ''"
-      class="border rounded px-2 py-1 text-sm w-64 dark:bg-gray-800 dark:border-gray-600"
+      class="border rounded px-2 py-1 text-sm dark:bg-gray-800 dark:border-gray-600"
+      :class="localValue ? 'w-[222px]' : 'w-64'"
       @keyup.enter="applyImmediate"
     />
     <button
@@ -20,13 +21,33 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import adminforth from '@/adminforth';
 import { AdminForthFilterOperators } from '@/types/Common';
+import { useRoute } from 'vue-router';
+
+const route = useRoute();
 
 const props = defineProps<{ meta?: any; resource?: any; adminUser?: any }>();
 const localValue = ref('');
 let t: any = null;
+let blockFilterUpdate = false;
+
+onMounted(() => {
+  const filters = Object.keys(route.query).filter(k => k.startsWith('filter__')).map(k => {
+    const [_, field, operator] = k.split('__');
+    return {
+      field,
+      operator,
+      value: JSON.parse(decodeURIComponent(route.query[k] as string))
+    }
+  });
+  const isUniversalSearchFilterApplied = filters.find(f => f.field === '_universal_search');
+  if (isUniversalSearchFilterApplied) {
+    localValue.value = isUniversalSearchFilterApplied.value;
+    blockFilterUpdate = true;
+  };
+});
 
 function send(term?: string) {
   adminforth?.list?.updateFilter?.({
@@ -34,7 +55,6 @@ function send(term?: string) {
     operator: AdminForthFilterOperators.EQ,
     value: term || '',
   });
-  adminforth?.list?.refresh?.();
 }
 
 function apply() {
@@ -49,12 +69,17 @@ function applyImmediate() {
 }
 
 watch(localValue, () => {
+  if (blockFilterUpdate) {
+    blockFilterUpdate = false;
+    return;
+  }
   const delay = props.meta?.debounceMs ?? 500;
   if (t) clearTimeout(t);
   t = setTimeout(apply, delay);
 });
 
 function clear() {
+  blockFilterUpdate = true;
   localValue.value = '';
   applyImmediate();
 }
