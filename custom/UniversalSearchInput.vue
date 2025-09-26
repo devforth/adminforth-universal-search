@@ -21,23 +21,32 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import adminforth from '@/adminforth';
 import { AdminForthFilterOperators } from '@/types/Common';
-import { useFiltersStore } from '@/stores/filters';
+import { useRoute } from 'vue-router';
 
-const filtersStore = useFiltersStore();
+const route = useRoute();
 
 const props = defineProps<{ meta?: any; resource?: any; adminUser?: any }>();
 const localValue = ref('');
 let t: any = null;
-const oldFiltersValue = ref();
+let blockFilterUpdate = false;
 
-watch(() => filtersStore.filters, (newFilters) => {
-  oldFiltersValue.value = newFilters;
-  if (!newFilters || newFilters.length === 0) {
-    apply();
-  }
+onMounted(() => {
+  const filters = Object.keys(route.query).filter(k => k.startsWith('filter__')).map(k => {
+    const [_, field, operator] = k.split('__');
+    return {
+      field,
+      operator,
+      value: JSON.parse(decodeURIComponent(route.query[k] as string))
+    }
+  });
+  const isUniversalSearchFilterApplied = filters.find(f => f.field === '_universal_search');
+  if (isUniversalSearchFilterApplied) {
+    localValue.value = isUniversalSearchFilterApplied.value;
+    blockFilterUpdate = true;
+  };
 });
 
 function send(term?: string) {
@@ -61,12 +70,17 @@ function applyImmediate() {
 }
 
 watch(localValue, () => {
+  if (blockFilterUpdate) {
+    blockFilterUpdate = false;
+    return;
+  }
   const delay = props.meta?.debounceMs ?? 500;
   if (t) clearTimeout(t);
   t = setTimeout(apply, delay);
 });
 
 function clear() {
+  blockFilterUpdate = true;
   localValue.value = '';
   applyImmediate();
 }
