@@ -12,7 +12,7 @@
         <p
           v-if="localValue"
           @click="clear"
-          class="absolute right-2 top-1/2 -translate-y-1/2 hover:cursor-pointer hover:text-gray-600"
+          class="absolute right-2 top-1/2 -translate-y-1/2 hover:cursor-pointer hover:text-gray-600 dark:text-white dark:hover:text-gray-400  "
         >
           ✕
         </p>
