@@ -1,22 +1,22 @@
 <template>
   <div class="af-universal-search flex items-center gap-1">
     <slot name="prefix" />
-    <input
-      v-model="localValue"
-      type="text"
-      :placeholder="props.meta?.placeholder ?? ''"
-      class="border rounded px-2 py-1 text-sm dark:bg-gray-800 dark:border-gray-600"
-      :class="localValue ? 'w-[222px]' : 'w-64'"
-      @keyup.enter="applyImmediate"
-    />
-    <button
-      v-if="localValue"
-      @click="clear"
-      class="flex items-center py-1 px-2 text-sm font-medium text-lightListViewButtonText focus:outline-none bg-lightListViewButtonBackground rounded border border-lightListViewButtonBorder hover:bg-lightListViewButtonBackgroundHover hover:text-lightListViewButtonTextHover focus:z-10 focus:ring-4 focus:ring-lightListViewButtonFocusRing dark:focus:ring-darkListViewButtonFocusRing dark:bg-darkListViewButtonBackground dark:text-darkListViewButtonText dark:border-darkListViewButtonBorder dark:hover:text-darkListViewButtonTextHover dark:hover:bg-darkListViewButtonBackgroundHover rounded-default"
-      type="button"
-    >
-      ✕
-    </button>
+      <div class="relative w-64">
+        <input
+          v-model="localValue"
+          type="text"
+          :placeholder="props.meta?.placeholder ?? ''"
+          class="w-full border rounded text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white px-2 py-1 pr-6"
+          @keyup.enter="applyImmediate"
+        >
+        <p
+          v-if="localValue"
+          @click="clear"
+          class="absolute right-2 top-1/2 -translate-y-1/2 hover:cursor-pointer hover:text-gray-600"
+        >
+          ✕
+        </p>
+      </div>
     <slot name="suffix" />
   </div>
 </template>
