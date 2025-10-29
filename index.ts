@@ -12,7 +12,7 @@ export default class UniversalSearchPlugin extends AdminForthPlugin {
   }
 
   instanceUniqueRepresentation(_pluginOptions: any): string {
-    return 'universal-search';
+    return `${this.resourceConfig.resourceId}-universal-search`;
   }
 
   async modifyResourceConfig(adminforth: IAdminForth, resourceConfig: AdminForthResource) {
