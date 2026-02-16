@@ -6,7 +6,7 @@
           v-model="localValue"
           type="text"
           :placeholder="props.meta?.placeholder ?? ''"
-          class="w-full border rounded text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white px-2 py-1 pr-6"
+          class="w-full border rounded text-sm dark:bg-gray-800 border-gray-300 dark:border-gray-600 dark:text-white px-2 py-1 pr-6"
           @keyup.enter="applyImmediate"
         >
         <p
