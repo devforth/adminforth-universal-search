@@ -27,6 +27,7 @@
       [
         "semantic-release-slack-bot",
         {
+          "packageName": "@adminforth/universal-search",
           "notifyOnSuccess": true,
           "notifyOnFail": true,
           "slackIcon": ":package:",
@@ -49,6 +50,6 @@
     "typescript": "^5.9.2"
   },
   "peerDependencies": {
-    "adminforth": "next"
+    "adminforth": "^2.24.0"
   }
 }
