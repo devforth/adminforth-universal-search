@@ -14,7 +14,7 @@
     "search"
   ],
   "author": "devforth",
-  "license": "ISC",
+  "license": "MIT",
   "publishConfig": {
     "access": "public"
   },
