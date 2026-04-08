@@ -1,3 +1,5 @@
+import  {type PluginsCommonOptions } from "adminforth";
+
 export type SearchByMode = 'valueOnly' | 'labelOnly' | 'keyOnly' | 'both';
 
 export interface UniversalSearchColumnConfig {
@@ -7,7 +9,7 @@ export interface UniversalSearchColumnConfig {
   exact?: boolean;
 }
 
-export interface PluginOptions {
+export interface PluginOptions extends PluginsCommonOptions {
   columns?: UniversalSearchColumnConfig[];
   debounceMs?: number;
   placeholder?: string;
