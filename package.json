@@ -14,7 +14,7 @@
     "filters",
     "search"
   ],
-  "author": "devforth",
+  "author": "DevForth (https://devforth.io)",
   "license": "MIT",
   "publishConfig": {
     "access": "public"
