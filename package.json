@@ -6,6 +6,10 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "homepage": "https://adminforth.dev/docs/tutorial/Plugins/universal-search/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/devforth/adminforth-universal-search.git"
+  },
   "scripts": {
     "build": "tsc && rsync -av --exclude 'node_modules' custom dist/"
   },
