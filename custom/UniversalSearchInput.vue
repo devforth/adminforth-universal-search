@@ -1,57 +1,54 @@
 <template>
-  <div class="af-universal-search flex items-center gap-1">
+  <!-- a narrow list header gives the search a full row, a wide one keeps it in its single row -->
+  <div class="af-universal-search flex w-full items-center gap-1 @4xl/header:w-auto">
     <slot name="prefix" />
-      <div class="relative w-64">
-        <input
+      <!-- enter is handled on the wrapper so it fires once: Input spreads attrs on both its root and the input -->
+      <div class="min-w-0 flex-1 @4xl/header:w-64 @4xl/header:flex-none" @keyup.enter="applyImmediate">
+        <Input
           v-model="localValue"
           type="text"
+          fullWidth
           :placeholder="props.meta?.placeholder ?? ''"
-          class="w-full border rounded text-sm dark:bg-gray-800 border-gray-300 dark:border-gray-600 dark:text-white px-2 py-1 pr-6"
-          @keyup.enter="applyImmediate"
         >
-        <p
-          v-if="localValue"
-          @click="clear"
-          class="absolute right-2 top-1/2 -translate-y-1/2 hover:cursor-pointer hover:text-gray-600 dark:text-white dark:hover:text-gray-400  "
-        >
-          ✕
-        </p>
+          <template #rightIcon>
+            <IconX
+              v-if="localValue"
+              @click="clear"
+              class="w-4 h-4 cursor-pointer text-lightInputIconColor hover:text-lightInputText dark:text-darkInputIconColor dark:hover:text-darkInputText transition-colors"
+            />
+          </template>
+        </Input>
       </div>
     <slot name="suffix" />
   </div>
 </template>
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue';
+import { ref, computed, watch } from 'vue';
 import adminforth from '@/adminforth';
+import { Input } from '@/afcl';
+import { IconX } from '@iconify-prerendered/vue-lucide';
 import { AdminForthFilterOperators } from '@/types/Common';
-import { useRoute } from 'vue-router';
-
-const route = useRoute();
+import { useFiltersStore } from '@/stores/filters';
 
 const props = defineProps<{ meta?: any; resource?: any; adminUser?: any }>();
-const localValue = ref('');
+const filtersStore = useFiltersStore();
+const field = '_universal_search';
+const appliedTerm = computed(() => filtersStore.filters.find(f => f.field === field)?.value ?? '');
+const localValue = ref(appliedTerm.value);
 let t: any = null;
 let blockFilterUpdate = false;
 
-onMounted(() => {
-  const filters = Object.keys(route.query).filter(k => k.startsWith('filter__')).map(k => {
-    const [_, field, operator] = k.split('__');
-    return {
-      field,
-      operator,
-      value: JSON.parse(decodeURIComponent(route.query[k] as string))
-    }
-  });
-  const isUniversalSearchFilterApplied = filters.find(f => f.field === '_universal_search');
-  if (isUniversalSearchFilterApplied) {
-    localValue.value = isUniversalSearchFilterApplied.value;
+// follow filter changes made outside of the input: restore from the URL, "clear filters"
+watch(appliedTerm, (term) => {
+  if (term !== localValue.value.trim()) {
     blockFilterUpdate = true;
-  };
+    localValue.value = term;
+  }
 });
 
 function send(term?: string) {
   adminforth?.list?.updateFilter?.({
-    field: '_universal_search',
+    field,
     operator: AdminForthFilterOperators.EQ,
     value: term || '',
   });

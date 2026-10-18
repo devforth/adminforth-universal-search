@@ -56,6 +56,6 @@
     "typescript": "^5.9.2"
   },
   "peerDependencies": {
-    "adminforth": "^3.7.1"
+    "adminforth": "^4.2.0"
   }
 }
