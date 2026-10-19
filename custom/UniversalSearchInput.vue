@@ -47,7 +47,7 @@ watch(appliedTerm, (term) => {
 });
 
 function send(term?: string) {
-  adminforth?.list?.updateFilter?.({
+  adminforth?.list?.setFilter?.({
     field,
     operator: AdminForthFilterOperators.EQ,
     value: term || '',
